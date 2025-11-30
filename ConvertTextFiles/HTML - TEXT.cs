@@ -26,11 +26,11 @@ namespace cONVERTPDFTEXT
                 saveFileDialog.Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*";
                 if (saveFileDialog.ShowDialog() == true)
                 {
-                    string path = saveFileDialog.FileName;
-                    string pathh = System.IO.Path.GetExtension(path);
+                    string FilePath = saveFileDialog.FileName;
+                    string pathh = System.IO.Path.GetExtension(FilePath);
                     if (pathh.ToLower() == ".txt")
                     {
-                        return path;
+                        return FilePath;
                     }
                     else
                     {
@@ -53,9 +53,8 @@ namespace cONVERTPDFTEXT
             }
         }
 
-        public async Task<string[]> Fileread()
+        public async Task<string[]> Fileread(string filepath)
         { 
-            var filepath = await Filepath();
             if ((File.Exists(filepath) && filepath != "Выберите файл" && filepath != "Неверное расширение файла!" && filepath != "Ошибка"))
             {
                 try
@@ -86,9 +85,9 @@ namespace cONVERTPDFTEXT
             }
         }
 
-        public async Task Fileconvert(string outpath)
+        public async Task Fileconvert(string FilePath, string outpath)
         {
-            string[] massiv = await Fileread();
+            string[] massiv = await Fileread(FilePath);
             try
             {
                 Workbook workbook = new Workbook();
@@ -119,7 +118,7 @@ namespace cONVERTPDFTEXT
             }
         }
 
-        public async Task<string> filesave()
+        public async Task<string> filesave(string FilePath)
         {
             PoolongSaveFileDialog pool = new PoolongSaveFileDialog();
             SaveFileDialog saveFileDialog = null;
@@ -141,7 +140,7 @@ namespace cONVERTPDFTEXT
                     var pathh = System.IO.Path.GetExtension(path);
                     if (pathh.ToLower() == ".html")
                     {
-                        await Fileconvert(path);
+                        await Fileconvert(FilePath,path);
                         return path;
                     }
                     else

@@ -14,6 +14,7 @@ namespace cONVERTPDFTEXT
     public class Word___Text
     {
         private long _filerazmer;
+
         public async Task<string> Filepath()
         {
             PoolongSaveFileDialog pool = new PoolongSaveFileDialog();
@@ -26,11 +27,11 @@ namespace cONVERTPDFTEXT
 
                 if (saveFileDialog.ShowDialog() == true)
                 {
-                    var pathfile = saveFileDialog.FileName;
-                    string pathexti = Path.GetExtension(pathfile);
+                    string FilePath = saveFileDialog.FileName;
+                    string pathexti = Path.GetExtension(FilePath);
                     if (pathexti.ToLower() == ".txt")
                     {
-                        return pathfile;
+                        return FilePath;
                     }
                     else
                     {
@@ -54,10 +55,8 @@ namespace cONVERTPDFTEXT
         }
 
 
-        public async Task<string[]> Filereading()
+        public async Task<string[]> Filereading(string filepath)
         {
-            string filepath = await Filepath();
-
             if (File.Exists(filepath) && filepath != "Выберите файл" && filepath != "Неверное расширение файла!" && filepath != "Ошибка")
             {
                 FileInfo file = new FileInfo(filepath);
@@ -89,9 +88,9 @@ namespace cONVERTPDFTEXT
             }
         }
 
-        public async Task Convertfile(string outpath)
+        public async Task Convertfile(string FilePath,string outpath)
         {
-            string[] massiv = await Filereading();
+            string[] massiv = await Filereading(FilePath);
             try
             {
                 Aspose.Words.Document doc = new Aspose.Words.Document();
@@ -122,7 +121,7 @@ namespace cONVERTPDFTEXT
             }
         }
 
-        public async Task<string> SaveFile()
+        public async Task<string> SaveFile(string FilePath)
         {
             PoolongSaveFileDialog pool = new PoolongSaveFileDialog();
             SaveFileDialog saveFileDialog = null;
@@ -144,7 +143,7 @@ namespace cONVERTPDFTEXT
                     string pathh = Path.GetExtension(path);
                     if (pathh.ToLower() == ".docx")
                     {
-                        await Convertfile(path);
+                        await Convertfile(FilePath, path);
                         MessageBox.Show($"Файл успешно сохранен по пути {path}");
                         return path;
                     }
