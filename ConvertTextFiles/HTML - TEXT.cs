@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Shapes;
+using FileSaveMail;
 
 namespace cONVERTPDFTEXT
 {
@@ -118,7 +119,7 @@ namespace cONVERTPDFTEXT
             }
         }
 
-        public async Task<string> filesave(string FilePath)
+        public async Task<string> filesave(string FilePath, bool Filesave, bool FileEmail,string Email)
         {
             PoolongSaveFileDialog pool = new PoolongSaveFileDialog();
             SaveFileDialog saveFileDialog = null;
@@ -127,31 +128,46 @@ namespace cONVERTPDFTEXT
                 saveFileDialog = pool.GetSavefiledialog();
                 saveFileDialog.Title = "Cохранение";
                 saveFileDialog.Filter = "HTML Document (*.html)|*.html|Все файлы (*.*)|*.*";
-                if (saveFileDialog.ShowDialog() == true)
+
+                if (Filesave ||FileEmail)
                 {
-                    var path = saveFileDialog.FileName;
-                    var disk = System.IO.Path.GetPathRoot(path);
-                    DriveInfo drive = new DriveInfo(disk);
-                    var resultdrive = drive.AvailableFreeSpace;
-                    if (_filerazmer > resultdrive)
+                    if (saveFileDialog.ShowDialog() == true)
                     {
-                        return "На диске нет свободного места!";
-                    }
-                    var pathh = System.IO.Path.GetExtension(path);
-                    if (pathh.ToLower() == ".html")
-                    {
-                        await Fileconvert(FilePath,path);
-                        return path;
+                        var path = saveFileDialog.FileName;
+                        var disk = System.IO.Path.GetPathRoot(path);
+                        DriveInfo drive = new DriveInfo(disk);
+                        var resultdrive = drive.AvailableFreeSpace;
+                        if (_filerazmer > resultdrive)
+                        {
+                            return "На диске нет свободного места!";
+                        }
+                        var pathh = System.IO.Path.GetExtension(path);
+                        if (pathh.ToLower() == ".html")
+                        {
+                            await Fileconvert(FilePath, path);
+                            if (FileEmail == true && !string.IsNullOrEmpty(Email))
+                            {
+                                FileInfo fileinfo = new FileInfo(path);
+                                long razmer = fileinfo.Length;
+                                if (razmer < 26214400)
+                                {
+                                    MailSend mail = new MailSend();
+                                    mail.smptserververifi(Email, path);
+                                }
+                                return path;
+                            }
+                        }
+                        else
+                        {
+                            return "Попытка сохранить отличный от html файл!";
+                        }
                     }
                     else
                     {
-                        return "Попытка сохранить отличный от html файл!";
+                        return "Выберите директорию для сохранения";
                     }
-                }
-                else
-                {
-                    return "Выберите директорию для сохранения";
-                }
+                }            
+                return "Выберите способ сохранения";
             }
             catch (Exception ex)
             {

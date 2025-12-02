@@ -1,12 +1,13 @@
-﻿using System;
+﻿using Aspose.Pdf.Text;
+using FileSaveMail;
+using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
-using Microsoft.Win32;
 using System.Windows;
-using Aspose.Pdf.Text;
 namespace cONVERTPDFTEXT
 {
        public class PDFWord
@@ -73,15 +74,17 @@ namespace cONVERTPDFTEXT
                     }
             }
 
-            public async Task<string> Filesave(string FilePath)
+            public async Task<string> Filesave(string FilePath, string Email,bool Filesave, bool FileEmail)
             {
                 PoolongSaveFileDialog pool = new PoolongSaveFileDialog();
                 SaveFileDialog saveFileDialog = null;
-                try
+            try
+            {
+                saveFileDialog = pool.GetSavefiledialog();
+                saveFileDialog.Title = "Сохранение файла";
+                saveFileDialog.Filter = "Word Document (*.docx)|*.docx|Word 97-2003 (*.doc)|*.doc|Все файлы (*.*)|*.*";
+                if (Filesave || FileEmail)
                 {
-                    saveFileDialog = pool.GetSavefiledialog();
-                    saveFileDialog.Title = "Сохранение файла";
-                    saveFileDialog.Filter = "Word Document (*.docx)|*.docx|Word 97-2003 (*.doc)|*.doc|Все файлы (*.*)|*.*";
                     if (saveFileDialog.ShowDialog() == true)
                     {
                         var path = saveFileDialog.FileName;
@@ -93,8 +96,18 @@ namespace cONVERTPDFTEXT
                             string filerasch = Path.GetExtension(path);
                             if (filerasch.ToLower() == ".docx")
                             {
-                                await fileconvert(FilePath,path);
-                                return path;
+                                await fileconvert(FilePath, path);
+                                if (FileEmail == true && !string.IsNullOrEmpty(Email))
+                                {
+                                    FileInfo fileinfo = new FileInfo(path);
+                                    long razmer = fileinfo.Length;
+                                    if (razmer < 26214400)
+                                    {
+                                        MailSend mail = new MailSend();
+                                        mail.smptserververifi(Email, path);
+                                    }
+                                    return path;
+                                }
                             }
                             else
                             {
@@ -111,14 +124,16 @@ namespace cONVERTPDFTEXT
                         return ("Выберите директорию для сохранения");
                     }
                 }
-                catch (Exception ex)
-                {
-                    return "Не удалось сохранить файл cONVERTPDFTEXT -> PDF - Word -> Filesave" + ex.Message;
-                }
-                finally
-                {
-                    pool.RefreshFilegialog(saveFileDialog);
-                }
+                return "Выберите вариант сохранения";
+            }
+            catch (Exception ex)
+            {
+                return "Не удалось сохранить файл cONVERTPDFTEXT -> PDF - Word -> Filesave" + ex.Message;
+            }
+            finally
+            {
+                pool.RefreshFilegialog(saveFileDialog);
+            }
             }
        }
 }

@@ -1,6 +1,7 @@
 ﻿using Aspose.Pdf.AI;
 using Aspose.Pdf.Text;
 using Aspose.Words;
+using FileSaveMail;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -121,41 +122,55 @@ namespace cONVERTPDFTEXT
             }
         }
 
-        public async Task<string> SaveFile(string FilePath)
+        public async Task<string> SaveFile(string FilePath, string Email, bool Filesave,bool FileEmail)
         {
             PoolongSaveFileDialog pool = new PoolongSaveFileDialog();
             SaveFileDialog saveFileDialog = null;
             try
             {
-                saveFileDialog = pool.GetSavefiledialog();
-                saveFileDialog.Title = "Сохранеие";
-                saveFileDialog.Filter = "Word Document (*.docx)|*.docx|Word 97-2003 (*.doc)|*.doc|Все файлы (*.*)|*.*";
-                if (saveFileDialog.ShowDialog() == true)
+                if (Filesave || FileEmail)
                 {
-                    var path = saveFileDialog.FileName;
-                    string disk = Path.GetPathRoot(path);
-                    DriveInfo drive = new DriveInfo(disk);
-                    long drivelenght = drive.AvailableFreeSpace;
-                    if (_filerazmer > drivelenght)
+                    saveFileDialog = pool.GetSavefiledialog();
+                    saveFileDialog.Title = "Сохранеие";
+                    saveFileDialog.Filter = "Word Document (*.docx)|*.docx|Word 97-2003 (*.doc)|*.doc|Все файлы (*.*)|*.*";
+                    if (saveFileDialog.ShowDialog() == true)
                     {
-                        return "На диске нет свободного места!";
-                    }
-                    string pathh = Path.GetExtension(path);
-                    if (pathh.ToLower() == ".docx")
-                    {
-                        await Convertfile(FilePath, path);
-                        MessageBox.Show($"Файл успешно сохранен по пути {path}");
-                        return path;
+                        var path = saveFileDialog.FileName;
+                        string disk = Path.GetPathRoot(path);
+                        DriveInfo drive = new DriveInfo(disk);
+                        long drivelenght = drive.AvailableFreeSpace;
+                        if (_filerazmer > drivelenght)
+                        {
+                            return "На диске нет свободного места!";
+                        }
+                        string pathh = Path.GetExtension(path);
+                        if (pathh.ToLower() == ".docx")
+                        {
+                            await Convertfile(FilePath, path);
+                            MessageBox.Show($"Файл успешно сохранен по пути {path}");
+                            if (FileEmail == true && !string.IsNullOrEmpty(Email))
+                            {
+                                FileInfo fileinfo = new FileInfo(path);
+                                long razmer = fileinfo.Length;
+                                if (razmer < 26214400)
+                                {
+                                    MailSend mail = new MailSend();
+                                    mail.smptserververifi(Email, path);
+                                }
+                                return path;
+                            }
+                        }
+                        else
+                        {
+                            return "Попытка сохранить отличный от pdf файл!";
+                        }
                     }
                     else
                     {
-                        return "Попытка сохранить отличный от pdf файл!";
+                        return "Выберите директорию для сохранения";
                     }
                 }
-                else
-                {
-                    return "Выберите директорию для сохранения";
-                }
+                return "Выберите вариант сохранения";
             }
             catch (Exception ex)
             {

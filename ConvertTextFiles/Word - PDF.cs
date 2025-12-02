@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using FileSaveMail;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -74,7 +75,7 @@ namespace cONVERTPDFTEXT
             }
         }
 
-        public async Task<string> filesave(string Filepath)
+        public async Task<string> filesave(string Filepath,string Email,bool Filesave,bool FileEmail)
         {
             PoolongSaveFileDialog pool= new PoolongSaveFileDialog();
             SaveFileDialog savefile2 = null;
@@ -83,35 +84,49 @@ namespace cONVERTPDFTEXT
                 savefile2 = pool.GetSavefiledialog();
                 savefile2.Title = "Сохранение";
                 savefile2.Filter = "PDF файлы (*.pdf)|*.pdf|Все файлы (*.*)|*.*";
-                if (savefile2.ShowDialog() == true)
+                if (FileEmail || Filesave)
                 {
-                    var path = savefile2.FileName;
-                    var pathh = System.IO.Path.GetPathRoot(path);
-                    DriveInfo DRIVE = new DriveInfo(pathh);
-                    var freespase = DRIVE.TotalFreeSpace;
-                    if (_filerazmeer < freespase)
+                    if (savefile2.ShowDialog() == true)
                     {
-                        string filerach = System.IO.Path.GetExtension(path);
-                        if (filerach.ToLower() == ".pdf")
+                        var path = savefile2.FileName;
+                        var pathh = System.IO.Path.GetPathRoot(path);
+                        DriveInfo DRIVE = new DriveInfo(pathh);
+                        var freespase = DRIVE.TotalFreeSpace;
+                        if (_filerazmeer < freespase)
                         {
-                            await fileconvert(Filepath, path);
-                            return path;
+                            string filerach = System.IO.Path.GetExtension(path);
+                            if (filerach.ToLower() == ".pdf")
+                            {
+                                await fileconvert(Filepath, path);
+                                if (FileEmail == true && !string.IsNullOrEmpty(Email))
+                                {
+                                    FileInfo fileinfo = new FileInfo(path);
+                                    long razmer = fileinfo.Length;
+                                    if (razmer < 26214400)
+                                    {
+                                        MailSend mail = new MailSend();
+                                        mail.smptserververifi(Email, path);
+                                    }
+                                    return path;
+                                }
+                            }
+                            else
+                            {
+                                return "Вы выбрали файл отличный от pdf!";
+                            }
                         }
                         else
                         {
-                            return "Вы выбрали файл отличный от pdf!";
+                            return "На диске не достаточно места";
                         }
+
                     }
                     else
                     {
-                        return "На диске не достаточно места";
+                        return "Выберите директорию для сохранения";
                     }
-
                 }
-                else
-                {
-                    return "Выберите директорию для сохранения";
-                }
+                return "Выберите вариант сохранения";
             }
             catch (Exception ex)
             {

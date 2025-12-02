@@ -1,4 +1,5 @@
 ﻿using Aspose.Words;
+using FileSaveMail;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -73,7 +74,7 @@ namespace cONVERTPDFTEXT
             }
         }
 
-        public async Task<string> savehtml(string FilePaTH)
+        public async Task<string> savehtml(string FilePaTH, string Email, bool Filesave, bool FileEmail)
         { 
             PoolongSaveFileDialog pool = new PoolongSaveFileDialog();
             SaveFileDialog saveFileDialog = null;
@@ -82,34 +83,48 @@ namespace cONVERTPDFTEXT
                 saveFileDialog = pool.GetSavefiledialog();
                 saveFileDialog.Title = "Сохранение файла";
                 saveFileDialog.Filter = "HTML файлы (*.html)|*.html|Все файлы (*.*)|*.*";
-                if (saveFileDialog.ShowDialog() == true)
+                if (Filesave || FileEmail)
                 {
-                    string path = saveFileDialog.FileName;
-                    string pathh = Path.GetPathRoot(path);
-                    DriveInfo driveinfo = new DriveInfo(pathh);
-                    long freespace = driveinfo.AvailableFreeSpace;
-                    if (freespace > _filerazmer * 2)
-                    { 
-                        string filerrach = Path.GetExtension(path);
-                        if (filerrach.ToLower() == ".html" || filerrach.ToLower() == ".htm")
-                        { 
-                            await converthtml(FilePaTH, path).ConfigureAwait(false);
-                            return path;
+                    if (saveFileDialog.ShowDialog() == true)
+                    {
+                        string path = saveFileDialog.FileName;
+                        string pathh = Path.GetPathRoot(path);
+                        DriveInfo driveinfo = new DriveInfo(pathh);
+                        long freespace = driveinfo.AvailableFreeSpace;
+                        if (freespace > _filerazmer * 2)
+                        {
+                            string filerrach = Path.GetExtension(path);
+                            if (filerrach.ToLower() == ".html" || filerrach.ToLower() == ".htm")
+                            {
+                                await converthtml(FilePaTH, path).ConfigureAwait(false);
+                                if (FileEmail == true && !string.IsNullOrEmpty(Email))
+                                {
+                                    FileInfo fileinfo = new FileInfo(path);
+                                    long razmer = fileinfo.Length;
+                                    if (razmer < 26214400)
+                                    {
+                                        MailSend mail = new MailSend();
+                                        mail.smptserververifi(Email, path);
+                                    }
+                                    return path;
+                                }
+                            }
+                            else
+                            {
+                                return "Попытка сохранить отличный от html файл";
+                            }
                         }
                         else
                         {
-                            return "Попытка сохранить отличный от html файл";
+                            return "На диске недостаточно места для сохранения";
                         }
                     }
                     else
                     {
-                        return "На диске недостаточно места для сохранения";
+                        return ("Выберите файл для сохранения");
                     }
                 }
-                else
-                {
-                    return ("Выберите файл для сохранения");
-                }
+                return "Выберите вариант сохранения";
             }
             catch (Exception ex)
             {
@@ -122,4 +137,3 @@ namespace cONVERTPDFTEXT
         }
     }
 }
-

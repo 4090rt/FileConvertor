@@ -1,5 +1,6 @@
 ﻿using Aspose.Pdf.Operators;
 using Aspose.Pdf.Text;
+using FileSaveMail;
 using iTextSharp.text.pdf;
 using Microsoft.Win32;
 using System;
@@ -229,7 +230,7 @@ namespace cONVERTPDFTEXT
             }
         }
 
-        public async Task<string> FileSave()
+        public async Task<string> FileSave(string Email,bool Filesave, bool FileEmail)
         {
             PoolongSaveFileDialog pool = new PoolongSaveFileDialog();
             SaveFileDialog saveFileDialog = null;
@@ -238,33 +239,48 @@ namespace cONVERTPDFTEXT
                 saveFileDialog = pool.GetSavefiledialog();
                 saveFileDialog.Title = "Сохранение";
                 saveFileDialog.Filter = "PDF файлы (*.pdf)|*.pdf|Все файлы (*.*)|*.*";
-                if (saveFileDialog.ShowDialog() == true)
+                if (Filesave || FileEmail)
                 {
-                    string filepathsave = saveFileDialog.FileName;
-                    string disk = Path.GetPathRoot(filepathsave);
-                    DriveInfo drive = new DriveInfo(disk);
-                    long freeSpace = drive.AvailableFreeSpace;
-                    if (_filerazmer > freeSpace)
-                    {
-                        return "На диске не достаточно свобожного места";
-                    }
 
-                    string pathgetex = Path.GetExtension(filepathsave);
-                    if (pathgetex.ToLower() == ".pdf")
+                    if (saveFileDialog.ShowDialog() == true)
                     {
-                        await convertpdf(filepathsave);
-                        MessageBox.Show($"Файл успешно сохранен по пути {filepathsave}");
-                        return filepathsave;
+                        string path = saveFileDialog.FileName;
+                        string disk = Path.GetPathRoot(path);
+                        DriveInfo drive = new DriveInfo(disk);
+                        long freeSpace = drive.AvailableFreeSpace;
+                        if (_filerazmer > freeSpace)
+                        {
+                            return "На диске не достаточно свобожного места";
+                        }
+
+                        string pathgetex = Path.GetExtension(path);
+                        if (pathgetex.ToLower() == ".pdf")
+                        {
+                            await convertpdf(path);
+                            MessageBox.Show($"Файл успешно сохранен по пути {path}");
+                            if (FileEmail == true && !string.IsNullOrEmpty(Email))
+                            {
+                                FileInfo fileinfo = new FileInfo(path);
+                                long razmer = fileinfo.Length;
+                                if (razmer < 26214400)
+                                {
+                                    MailSend mail = new MailSend();
+                                    mail.smptserververifi(Email, path);
+                                }
+                                return path;
+                            }
+                        }
+                        else
+                        {
+                            return "Попытка сохранить отличный от pdf файл!";
+                        }
                     }
                     else
                     {
-                        return "Попытка сохранить отличный от pdf файл!";
+                        return "Выберите директорию для сохранения";
                     }
                 }
-                else
-                {
-                    return "Выберите директорию для сохранения";
-                }
+                return "Выберите вариант сохранения";
             }
             catch (Exception ex)
             {
