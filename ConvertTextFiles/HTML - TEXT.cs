@@ -1,47 +1,58 @@
 ﻿using Aspose.Cells;
+using Aspose.Pdf.Operators;
+using FileSaveMail;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Shapes;
-using FileSaveMail;
 
 namespace cONVERTPDFTEXT
 {
     public class HTML___TEXT
     {
         private long _filerazmer;
-
-        public async Task<string> Filepath()
+        private CancellationTokenSource _ctg;
+        public string Filepath(CancellationToken cancellationToken = default)
         {
-            PoolongSaveFileDialog pool = new PoolongSaveFileDialog();
-            SaveFileDialog saveFileDialog = null;
+            PoollongOpenFileDialog pool = new PoollongOpenFileDialog();
+            OpenFileDialog openFileDialog = null;
             try
             {
-                saveFileDialog = pool.GetSavefiledialog();
-                saveFileDialog.Title = "Выбор файла";
-                saveFileDialog.Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*";
-                if (saveFileDialog.ShowDialog() == true)
+                cancellationToken.ThrowIfCancellationRequested();
+                openFileDialog = pool.PollOpen();
+                openFileDialog.Title = "Выбор файла";
+                openFileDialog.Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*";
+                var result = openFileDialog.ShowDialog();
                 {
-                    string FilePath = saveFileDialog.FileName;
-                    string pathh = System.IO.Path.GetExtension(FilePath);
-                    if (pathh.ToLower() == ".txt")
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (result == true)
                     {
-                        return FilePath;
+                        string FilePath = openFileDialog.FileName;
+                        string pathh = System.IO.Path.GetExtension(FilePath);
+                        if (pathh.ToLower() == ".txt")
+                        {
+                            return FilePath;
+                        }
+                        else
+                        {
+                            return "Неверное расширение файла!";
+                        }
                     }
                     else
                     {
-                        return "Неверное расширение файла!";
+                        return "Файл не выбран!";
                     }
                 }
-                else
-                {
-                    return "Файл не выбран!";
-                }
+            }
+            catch (OperationCanceledException)
+            {
+                return "Операция отменена!";
             }
             catch (Exception ex)
             {
@@ -50,7 +61,7 @@ namespace cONVERTPDFTEXT
             }
             finally
             {
-                pool.RefreshFilegialog(saveFileDialog);
+                pool.PoolClosed(openFileDialog);
             }
         }
 
@@ -145,16 +156,47 @@ namespace cONVERTPDFTEXT
                         if (pathh.ToLower() == ".html")
                         {
                             await Fileconvert(FilePath, path);
+
                             if (FileEmail == true && !string.IsNullOrEmpty(Email))
                             {
                                 FileInfo fileinfo = new FileInfo(path);
                                 long razmer = fileinfo.Length;
                                 if (razmer < 26214400)
                                 {
-                                    MailSend mail = new MailSend();
-                                    mail.smptserververifi(Email, path);
+                                    try
+                                    {
+                                        Regex r1 = new Regex("@gmail.com", RegexOptions.IgnoreCase);
+                                        Regex r2 = new Regex("@yandex.ru", RegexOptions.IgnoreCase);
+                                        Regex r3 = new Regex("@mail.ru", RegexOptions.IgnoreCase);
+                                        bool regex1 = r1.IsMatch(Email);
+                                        bool regex2 = r2.IsMatch(Email);
+                                        bool regex3 = r3.IsMatch(Email);
+                                        if (regex1 == true)
+                                        {
+                                            MailSendGmail mail = new MailSendGmail();
+                                            await mail.smptserververifi(Email, path);
+                                        }
+                                        else if (regex2 == true)
+                                        {
+                                            MailSendYandex mail = new MailSendYandex();
+                                            await mail.smptserververifi(Email, path);
+                                        }
+                                        else if (regex3 == true)
+                                        {
+                                            MailSendYandex mail = new MailSendYandex();
+                                            await mail.smptserververifi(Email, path);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        return "Не удалось сохранить файл cONVERTPDFTEXT -> HTML-Text -> filesave" + ex.Message;
+                                    }
                                 }
                                 return path;
+                            }
+                            else
+                            {
+                                return ($"Не удалось отправить на почту, файл сохранен по указанному пути");
                             }
                         }
                         else
