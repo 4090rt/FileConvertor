@@ -104,7 +104,7 @@ namespace cONVERTPDFTEXT
             {
                 Workbook workbook = new Workbook();
                 Worksheet worksch = workbook.Worksheets[0];
-                worksch.Name = "Расходы";
+                worksch.Name = "Готовый файл";
 
                 if (massiv != null)
                 {
@@ -167,10 +167,8 @@ namespace cONVERTPDFTEXT
                                     {
                                         Regex r1 = new Regex("@gmail.com", RegexOptions.IgnoreCase);
                                         Regex r2 = new Regex("@yandex.ru", RegexOptions.IgnoreCase);
-                                        Regex r3 = new Regex("@mail.ru", RegexOptions.IgnoreCase);
                                         bool regex1 = r1.IsMatch(Email);
                                         bool regex2 = r2.IsMatch(Email);
-                                        bool regex3 = r3.IsMatch(Email);
                                         if (regex1 == true)
                                         {
                                             MailSendGmail mail = new MailSendGmail();
@@ -181,15 +179,10 @@ namespace cONVERTPDFTEXT
                                             MailSendYandex mail = new MailSendYandex();
                                             await mail.smptserververifi(Email, path);
                                         }
-                                        else if (regex3 == true)
-                                        {
-                                            MailSendYandex mail = new MailSendYandex();
-                                            await mail.smptserververifi(Email, path);
-                                        }
                                     }
                                     catch (Exception ex)
                                     {
-                                        return "Не удалось сохранить файл cONVERTPDFTEXT -> HTML-Text -> filesave" + ex.Message;
+                                        return "Не удалось сохранить файл на почту cONVERTPDFTEXT -> HTML-Text -> filesave" + ex.Message;
                                     }
                                 }
                                 return path;
