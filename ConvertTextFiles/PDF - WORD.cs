@@ -9,158 +9,228 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms;
 namespace cONVERTPDFTEXT
 {
-       public class PDFWord
-       {
-             private long _filerazmer;
-            private CancellationTokenSource _ctg;
-            public async Task<string> fILEPATH(CancellationToken cancellationToken = default)
-            { 
-                PoollongOpenFileDialog poll = new PoollongOpenFileDialog();
-                OpenFileDialog savefile = null;
+    public class PDFWord
+    {
+        private List<string> selectedFiles = new List<string>();
+        private long _filerazmer;
+        private CancellationTokenSource _ctg;
+        public async Task<List<string>> fILEPATH(CancellationToken cancellationToken = default)
+        {
+            PoollongOpenFileDialog poll = new PoollongOpenFileDialog();
+            OpenFileDialog savefile = null;
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 savefile = poll.PollOpen();
                 savefile.Title = "Выберите файл";
                 savefile.Filter = "PDF Files (*.pdf)|*.pdf|Все файлы (*.*)|*.*";
+                savefile.Multiselect = true;
+                savefile.FilterIndex = 1;
                 var dialog = savefile.ShowDialog();
                 if (dialog == true)
                 {
-                    string FilePath = savefile.FileName;
-                    string pathh = Path.GetExtension(FilePath);
+                    selectedFiles.Clear();
+                    bool hasNonPdfFiles = false;
 
-                    if (pathh.ToLower() == ".pdf")
+
+                    foreach (string dilepath in savefile.FileNames)
                     {
-                        return FilePath;
+                        string pathh = Path.GetExtension(dilepath);
+
+                        if (pathh.ToLower() == ".pdf")
+                        {
+                            selectedFiles.Add(dilepath);
+                        }
+                        else
+                        {
+                            hasNonPdfFiles = true;
+                        }
+                    }
+                    if (hasNonPdfFiles)
+                    {
+                        MessageBox.Show("Некоторые выбранные файлы не являются PDF. Будут обработаны только PDF файлы.",
+                            "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    if (selectedFiles.Count > 0)
+                    {
+                        return selectedFiles;
                     }
                     else
                     {
-                        return "Вы выбрали файл отличный от pdf!";
+                        MessageBox.Show("Выберите хотя бы один PDF файл",
+                            "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return new List<string>();
                     }
                 }
-                else
                 {
-                    return "Выберите файл для конвертации";
+
+                    return new List<string>();
                 }
             }
-            catch(OperationCanceledException)
+            catch (OperationCanceledException)
             {
-                return "Операция отменена";
+                return new List<string>();
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Не удалось получить путь к файлу cONVERTPDFTEXT -> PDF-WORD -> filePATH" + ex.Message);
-                return "Ошибка";
+                return new List<string>();
             }
             finally
             {
                 poll.PoolClosed(savefile);
             }
-            }
 
-            public async Task fileconvert(string FilePath, string outpath)
-            {
-                    try
-                    {
-                        FileInfo fileInfo = new FileInfo(FilePath);
-                        _filerazmer = fileInfo.Length;
-                        if (_filerazmer < 524288000)
-                        {
-                            Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(FilePath);
-                            pdfDocument.Save(outpath, Aspose.Pdf.SaveFormat.DocX);
-                        }
-                        else
-                        {
-                            MessageBox.Show("Файл слишком большой для конвертации");
-                        }
-                    }
-                    catch(Exception ex)
-                    {
-                        MessageBox.Show("Не удалось конвертировать файл cONVERTPDFTEXT -> PDF-Word -> fileconvert" + ex.Message);
-                    }
-            }
+        }
 
-            public async Task<string> Filesave(string FilePath, string Email,bool Filesave, bool FileEmail)
-            {
-                PoolongSaveFileDialog pool = new PoolongSaveFileDialog();
-                SaveFileDialog saveFileDialog = null;
+        public async Task fileconvert(string FilePath, string outpath)
+        {
             try
             {
-                saveFileDialog = pool.GetSavefiledialog();
-                saveFileDialog.Title = "Сохранение файла";
-                saveFileDialog.Filter = "Word Document (*.docx)|*.docx|Word 97-2003 (*.doc)|*.doc|Все файлы (*.*)|*.*";
-                if (Filesave || FileEmail)
+                FileInfo fileInfo = new FileInfo(FilePath);
+                _filerazmer = fileInfo.Length;
+                if (_filerazmer < 524288000)
                 {
-                    if (saveFileDialog.ShowDialog() == true)
+
+                    Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(FilePath);
+                    pdfDocument.Save(outpath, Aspose.Pdf.SaveFormat.DocX);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Не удалось конвертировать файл cONVERTPDFTEXT -> PDF-Word -> fileconvert" + ex.Message);
+            }
+        }
+        public async Task<string> Filesave(List<string> selectedFiles, string Email, bool Filesave, bool FileEmail)
+        {
+            // Если файл один - работаем как раньше
+            if (selectedFiles.Count == 1)
+            {
+                PoolongSaveFileDialog pool = new PoolongSaveFileDialog();
+                SaveFileDialog savefile2 = null;
+                try
+                {
+                    savefile2 = pool.GetSavefiledialog();
+                    savefile2.Title = "Сохранение";
+                    savefile2.Filter = "Word Document (*.docx)|*.docx";
+                    if (FileEmail || Filesave)
                     {
-                        var path = saveFileDialog.FileName;
-                        var patth = Path.GetPathRoot(path);
-                        DriveInfo drive = new DriveInfo(patth);
-                        long razmerdrivenesto = drive.AvailableFreeSpace;
-                        if (razmerdrivenesto > _filerazmer)
+                        if (savefile2.ShowDialog() == true)
                         {
-                            string filerasch = Path.GetExtension(path);
-                            if (filerasch.ToLower() == ".docx")
+                            var path = savefile2.FileName;
+                            var pathh = System.IO.Path.GetPathRoot(path);
+                            DriveInfo DRIVE = new DriveInfo(pathh);
+                            var freespase = DRIVE.TotalFreeSpace;
+                            if (_filerazmer < freespase)
                             {
-                                await fileconvert(FilePath, path);
-                                if (FileEmail == true && !string.IsNullOrEmpty(Email))
+                                string filerach = System.IO.Path.GetExtension(path);
+                                if (filerach.ToLower() == ".docx")
                                 {
-                                    FileInfo fileinfo = new FileInfo(path);
-                                    long razmer = fileinfo.Length;
-                                    if (razmer < 26214400)
+                                    await fileconvert(selectedFiles[0], path);
+                                    if (FileEmail == true && !string.IsNullOrEmpty(Email))
                                     {
-                                        try
+                                        FileInfo fileinfo = new FileInfo(path);
+                                        long razmer = fileinfo.Length;
+                                        if (razmer < 26214400)
                                         {
-                                            Regex r1 = new Regex("@gmail.com", RegexOptions.IgnoreCase);
-                                            Regex r2 = new Regex("@yandex.ru", RegexOptions.IgnoreCase);
-                                            bool regex1 = r1.IsMatch(Email);
-                                            bool regex2 = r2.IsMatch(Email);
-                                            if (regex1 == true)
+                                            try
                                             {
-                                                MailSendGmail mail = new MailSendGmail();
-                                                await mail.smptserververifi(Email, path);
+                                                Regex r1 = new Regex("@gmail.com", RegexOptions.IgnoreCase);
+                                                Regex r2 = new Regex("@yandex.ru", RegexOptions.IgnoreCase);
+                                                bool regex1 = r1.IsMatch(Email);
+                                                bool regex2 = r2.IsMatch(Email);
+                                                if (regex1 == true)
+                                                {
+                                                    MailSendGmail mail = new MailSendGmail();
+                                                    await mail.smptserververifi(Email, path);
+                                                }
+                                                if (regex2 == true)
+                                                {
+                                                    MailSendYandex mail = new MailSendYandex();
+                                                    await mail.smptserververifi(Email, path);
+                                                }
                                             }
-                                            if (regex2 == true)
+                                            catch (Exception ex)
                                             {
-                                                MailSendYandex mail = new MailSendYandex();
-                                                await mail.smptserververifi(Email, path);
+                                                return "Не удалось сохранить файл на почту cONVERTPDFTEXT -> HTML-Text -> filesave" + ex.Message;
                                             }
                                         }
-                                        catch (Exception ex)
-                                        {
-                                            return "Не удалось сохранить файл на почту cONVERTPDFTEXT -> HTML-Text -> filesave" + ex.Message;
-                                        }
+                                        return path;
                                     }
-                                    return path;
+                                }
+                                else
+                                {
+                                    return "Вы выбрали файл отличный от pdf!";
                                 }
                             }
                             else
                             {
-                                return "Попытка сохранить файл с расширениием отличным от .docx";
+                                return "На диске не достаточно места";
                             }
+
                         }
                         else
                         {
-                            return "На диске недостаточно места!";
+                            return "Выберите директорию для сохранения";
                         }
                     }
-                    else
-                    {
-                        return ("Выберите директорию для сохранения");
-                    }
+                    return "Выберите вариант сохранения";
                 }
-                return "Выберите вариант сохранения";
+                catch (Exception ex)
+                {
+                    return "Не удалось сохранить файл cONVERTPDFTEXT -> Word-PDF -> Filesave" + ex.Message;
+                }
+                finally
+                {
+                    pool.RefreshFilegialog(savefile2);
+                }
             }
-            catch (Exception ex)
+            else
             {
-                return "Не удалось сохранить файл cONVERTPDFTEXT -> PDF - Word -> Filesave" + ex.Message;
-            }
-            finally
-            {
+                PoolongSaveFileDialog pool = new PoolongSaveFileDialog();
+                SaveFileDialog saveFileDialog = pool.GetSavefiledialog();
+
+                saveFileDialog.Title = "Сохранение первого файла (остальные будут с номерами)";
+                saveFileDialog.Filter = "Word Document (*.docx)|*.docx";
+                saveFileDialog.FileName = "document_1.docx";
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    string firstFilePath = saveFileDialog.FileName;
+                    string folder = Path.GetDirectoryName(firstFilePath);
+                    string baseName = Path.GetFileNameWithoutExtension(firstFilePath);
+                    string extension = Path.GetExtension(firstFilePath);
+
+                    int successCount = 0;
+
+                    for (int i = 0; i < selectedFiles.Count; i++)
+                    {
+                        string outputPath;
+
+                        if (i == 0)
+                        {
+                            outputPath = firstFilePath;
+                        }
+                        else
+                        {
+                            // Остальные файлы - добавляем номер
+                            outputPath = Path.Combine(folder, $"{baseName}_{i + 1}{extension}");
+                        }
+
+                        await fileconvert(selectedFiles[i], outputPath);
+                        successCount++;
+                    }
+
+                    pool.RefreshFilegialog(saveFileDialog);
+                    return $"Сохранено {successCount} файлов в папку: {folder}";
+                }
+
                 pool.RefreshFilegialog(saveFileDialog);
+                return "Отменено";
             }
-            }
-       }
+        }
+    }
 }
